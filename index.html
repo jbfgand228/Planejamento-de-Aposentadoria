@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>App Aposentadoria 2033</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body { background: #0f172a; }
+    input[type="number"] { color-scheme: dark; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: .65; }
+    .scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar::-webkit-scrollbar-track { background: #0f172a; border-radius: 8px; }
+    .scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 8px; }
+    .field { width: 100%; min-width: 70px; border: 1px solid #334155; border-radius: .55rem; background: #0f172a; padding: .45rem .55rem; color: #e2e8f0; outline: none; }
+    .field:focus { border-color: #818cf8; box-shadow: 0 0 0 2px rgb(99 102 241 / .25); }
+    .money-field { min-width: 105px; text-align: right; }
+    @media (max-width: 640px) { .mobile-table { min-width: 880px; } }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased min-h-screen p-3 sm:p-5 md:p-8 selection:bg-indigo-500 selection:text-white">
+  <main class="max-w-7xl mx-auto bg-slate-800 rounded-3xl shadow-2xl border border-slate-700/50 overflow-hidden">
+    <header class="bg-gradient-to-r from-indigo-700 via-blue-700 to-teal-600 p-6 md:p-8 text-center relative border-b border-slate-700">
+      <div class="inline-block sm:absolute sm:top-4 sm:right-4 bg-slate-900/40 backdrop-blur-md text-[10px] sm:text-[11px] font-bold text-teal-300 px-3 py-1 rounded-full border border-teal-500/30 tracking-wider uppercase mb-4 sm:mb-0">Sistema de Planejamento Previdenciário</div>
+      <h1 class="text-3xl md:text-5xl font-black tracking-tight mb-2 text-white drop-shadow-sm">App Aposentadoria 2033</h1>
+      <p class="text-indigo-100 max-w-3xl mx-auto text-sm md:text-base font-medium">Organize contribuições, acompanhe valores pagos e a pagar e veja o tempo de contribuição informado.</p>
+    </header>
+
+    <section class="p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 bg-slate-900/40 border-b border-slate-700/60" aria-label="Resumo do planejamento">
+      <article class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 text-center">
+        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Tempo pago informado</span>
+        <strong id="tempoPago" class="text-xl md:text-2xl font-black text-indigo-300">0 anos, 0 meses</strong>
+        <span id="tempoDias" class="block text-xs text-slate-500 mt-1">0 dias adicionais</span>
+      </article>
+      <article class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 text-center">
+        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Soma do Histórico — pagos</span>
+        <strong id="txtSomaTotalHistorico" class="text-xl md:text-2xl font-black text-amber-400">R$ 0,00</strong>
+        <span class="block text-xs text-slate-500 mt-1">1989–2014 + parcelas atuais pagas</span>
+      </article>
+      <article class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 text-center">
+        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Valores a pagar</span>
+        <strong id="txtValoresPagar" class="text-xl md:text-2xl font-black text-rose-300">R$ 0,00</strong>
+        <span class="block text-xs text-slate-500 mt-1">Parcelas atuais pendentes</span>
+      </article>
+      <article class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 text-center">
+        <span class="text-[11px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Soma do Histórico Geral</span>
+        <strong id="txtSomaGeral" class="text-xl md:text-2xl font-black text-emerald-300">R$ 0,00</strong>
+        <span class="block text-xs text-slate-500 mt-1">Pagos + valores a pagar</span>
+      </article>
+    </section>
+
+    <section class="p-4 md:p-8 grid lg:grid-cols-12 gap-6 md:gap-8">
+      <div class="lg:col-span-5 space-y-4">
+        <div class="bg-slate-900/35 p-4 md:p-5 rounded-2xl border border-slate-700">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-1">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center gap-2"><span class="w-2 h-5 bg-amber-500 rounded-full inline-block"></span>Histórico Contribuído (1989 a 2014)</h2>
+              <p class="text-xs text-slate-400 mt-2">Informe, em cada ano, os meses e dias pagos e o valor total efetivamente pago naquele período.</p>
+            </div>
+            <button type="button" id="btnAdicionarAno" class="shrink-0 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-3 py-2 text-xs font-bold text-white transition">+ Adicionar período</button>
+          </div>
+          <div class="mt-4 grid grid-cols-[58px_1fr] sm:grid-cols-[64px_1fr] gap-2 px-2 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <span>Ano</span><span class="grid grid-cols-[.8fr_.8fr_1.4fr] gap-2"><span>Meses</span><span>Dias</span><span>Valor pago</span></span>
+          </div>
+          <div class="scrollbar overflow-y-auto max-h-[540px] pr-1 space-y-2 mt-2" id="containerHistorico"></div>
+          <p class="text-[11px] leading-relaxed text-slate-500 mt-3">Os dados são salvos automaticamente neste navegador. Preencha apenas os valores que correspondem ao seu histórico real.</p>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7 space-y-5">
+        <div class="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <span class="text-2xl mt-0.5" aria-hidden="true">📌</span>
+          <div>
+            <h3 class="font-bold text-amber-300 text-sm md:text-base">Acompanhamento de contribuições</h3>
+            <p class="text-xs md:text-sm text-slate-300 mt-1">A alíquota do carnê é configurada em 11% do salário de referência. Edite o salário, os valores pagos ou a pagar e o status; os totais e o tempo são atualizados automaticamente.</p>
+          </div>
+        </div>
+
+        <section class="bg-slate-900/35 rounded-2xl border border-slate-700 overflow-hidden shadow-lg">
+          <div class="bg-slate-900/70 p-4 border-b border-slate-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <div>
+              <h2 class="font-bold text-white text-base">Guias de contribuição (planejamento)</h2>
+              <p class="text-xs text-slate-400 mt-1">Salário de referência e carnê calculado automaticamente em 11%.</p>
+            </div>
+            <span class="self-start sm:self-auto bg-indigo-600/40 text-indigo-200 text-xs font-black px-3 py-1 rounded-md border border-indigo-500/30"><span id="quantidadeParcelas">0</span> parcelas</span>
+          </div>
+          <div class="scrollbar overflow-x-auto overflow-y-auto max-h-[560px]">
+            <table class="mobile-table w-full border-collapse text-left text-xs md:text-sm">
+              <thead class="bg-slate-800 text-slate-300 font-bold sticky top-0 z-10 border-b border-slate-700">
+                <tr>
+                  <th class="p-3 pl-4">Mês / Ano</th>
+                  <th class="p-3">Salário de referência</th>
+                  <th class="p-3">Carnê (11%)</th>
+                  <th class="p-3">Valor pago</th>
+                  <th class="p-3">Valor a pagar</th>
+                  <th class="p-3 pr-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="tableFuturoBody" class="divide-y divide-slate-700/50"></tbody>
+            </table>
+          </div>
+        </section>
+        <p class="text-[11px] text-slate-500 leading-relaxed">Este aplicativo é uma ferramenta de organização pessoal. Os valores e períodos informados não substituem a conferência do CNIS nem um cálculo oficial do INSS.</p>
+      </div>
+    </section>
+
+    <footer class="bg-slate-900/50 p-4 border-t border-slate-700 text-center text-xs text-slate-500">App Aposentadoria 2033 • Os dados ficam salvos localmente neste dispositivo.</footer>
+  </main>
+
+  <script>
+    'use strict';
+    const containerHistorico = document.getElementById('containerHistorico');
+    const tableFuturoBody = document.getElementById('tableFuturoBody');
+    const fmtBRL = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const HIST_KEY = 'app_aposentadoria_historico_v2';
+    const FUT_KEY = 'app_aposentadoria_futuro_v2';
+
+    function lerJSON(chave, fallback = {}) {
+      try { const valor = JSON.parse(localStorage.getItem(chave)); return valor && typeof valor === 'object' ? valor : fallback; }
+      catch (_) { return fallback; }
+    }
+    const historicoSalvo = lerJSON(HIST_KEY, null);
+    const legadoHistorico = lerJSON('app_aposentadoria_historico', {});
+    const dadosFuturosSalvos = lerJSON(FUT_KEY, {});
+    const legadoFuturo = lerJSON('app_aposentadoria_futuro', {});
+    let historico = historicoSalvo || {};
+    let futuros = dadosFuturosSalvos;
+
+    function obterRegraContribuicao(mes, ano) {
+      const dataChave = (ano * 12) + mes;
+      const faixas = [
+        [2026, 5, 2027, 3, 1621], [2027, 4, 2028, 3, 1838],
+        [2028, 4, 2029, 3, 1963], [2029, 4, 2030, 3, 2096],
+        [2030, 4, 2031, 3, 2238], [2031, 4, 2032, 3, 2390],
+        [2032, 4, 2033, 1, 2526]
+      ];
+      for (const [a1, m1, a2, m2, valor] of faixas) {
+        if (dataChave >= a1 * 12 + m1 && dataChave <= a2 * 12 + m2) return valor;
+      }
+      return 1621;
+    }
+
+    function criarHistoricoInicial() {
+      for (let ano = 1989; ano <= 2014; ano++) {
+        const id = String(ano);
+        if (historico[id]) continue;
+        // Importa dados antigos quando existirem; valores antigos eram médias mensais.
+        const valorAntigo = legadoHistorico[ano];
+        if (valorAntigo !== undefined && Number(valorAntigo) > 0) {
+          historico[id] = { ano, meses: 12, dias: 0, pago: Number(valorAntigo) * 12 };
+        } else {
+          historico[id] = { ano, meses: 0, dias: 0, pago: 0 };
+        }
+      }
+      salvarHistorico();
+    }
+    function salvarHistorico() { localStorage.setItem(HIST_KEY, JSON.stringify(historico)); }
+    function salvarFuturos() { localStorage.setItem(FUT_KEY, JSON.stringify(futuros)); }
+
+    function renderizarHistorico() {
+      const itens = Object.entries(historico).sort((a, b) => Number(a[1].ano) - Number(b[1].ano));
+      containerHistorico.innerHTML = itens.map(([id, item]) => `
+        <div class="grid grid-cols-[58px_1fr] sm:grid-cols-[64px_1fr] gap-2 items-center bg-slate-800/80 p-2 rounded-xl border border-slate-700/70 hover:border-slate-600 transition" data-hist-id="${escapar(id)}">
+          <input type="number" min="1900" max="2200" step="1" aria-label="Ano do período" value="${num(item.ano)}" class="field !px-1.5 !py-2 text-center text-xs font-black text-white hist-ano">
+          <div class="grid grid-cols-[.8fr_.8fr_1.4fr] gap-2">
+            <input type="number" min="0" max="12" step="1" aria-label="Meses pagos no ano ${num(item.ano)}" value="${num(item.meses)}" class="field !px-1.5 !py-2 text-center text-xs hist-meses">
+            <input type="number" min="0" max="30" step="1" aria-label="Dias pagos no ano ${num(item.ano)}" value="${num(item.dias)}" class="field !px-1.5 !py-2 text-center text-xs hist-dias">
+            <input type="number" min="0" step="0.01" aria-label="Valor pago no ano ${num(item.ano)}" value="${num(item.pago)}" class="field money-field !px-1.5 !py-2 text-xs text-amber-300 hist-pago">
+          </div>
+        </div>`).join('');
+    }
+
+    function montarFuturos() {
+      const inicio = new Date(2026, 5);
+      const fim = new Date(2033, 1);
+      for (let data = new Date(inicio); data <= fim; data.setMonth(data.getMonth() + 1)) {
+        const ano = data.getFullYear(), mes = data.getMonth(), id = `${ano}-${mes}`;
+        let registro = futuros[id];
+        if (!registro) {
+          const antigo = legadoFuturo[id] || {};
+          const salario = antigo.salarioBase !== undefined ? Number(antigo.salarioBase) : obterRegraContribuicao(mes, ano);
+          const carne = salario * 0.11;
+          const statusAntigo = antigo.status || '';
+          registro = {
+            salarioBase: salario,
+            pago: statusAntigo === 'PAGO' ? carne : 0,
+            aPagar: statusAntigo === 'PAGO' ? 0 : carne,
+            status: statusAntigo === 'PAGO' ? 'PAGO' : 'PENDENTE',
+            autoPagar: true
+          };
+          futuros[id] = registro;
+        } else if (registro.autoPagar !== false) {
+          // Atualiza parcelas pendentes automáticas das versões anteriores (8% ou 12%).
+          const base = Math.max(0, Number(registro.salarioBase) || 0);
+          const valorPendente = Math.max(0, Number(registro.aPagar) || 0);
+          if (valorPendente > 0 && (Math.abs(valorPendente - base * 0.08) < 0.011 || Math.abs(valorPendente - base * 0.12) < 0.011)) {
+            registro.aPagar = base * 0.11;
+          }
+        }
+      }
+      salvarFuturos();
+    }
+
+    function statusAtual(registro) {
+      const pagar = Math.max(0, Number(registro.aPagar) || 0);
+      const pago = Math.max(0, Number(registro.pago) || 0);
+      return pagar <= 0 && pago > 0 ? 'PAGO' : (pago > 0 ? 'PARCIAL' : 'PENDENTE');
+    }
+
+    function renderizarFuturos() {
+      let html = '';
+      const ids = Object.keys(futuros).sort((a, b) => {
+        const [aa, ma] = a.split('-').map(Number), [ab, mb] = b.split('-').map(Number);
+        return aa * 12 + ma - (ab * 12 + mb);
+      });
+      for (const id of ids) {
+        const [ano, mes] = id.split('-').map(Number);
+        const reg = futuros[id];
+        const salario = Math.max(0, Number(reg.salarioBase) || 0);
+        const carne = salario * 0.11;
+        const pago = Math.max(0, Number(reg.pago) || 0);
+        const aPagar = Math.max(0, Number(reg.aPagar) || 0);
+        const status = statusAtual(reg);
+        const badge = status === 'PAGO'
+          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          : status === 'PARCIAL' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+          : 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+        const nomeMes = new Date(ano, mes, 1).toLocaleString('pt-BR', { month: 'long' });
+        html += `<tr class="hover:bg-slate-800/50 transition text-slate-300" data-id="${id}">
+          <td class="p-3 pl-4 font-semibold capitalize text-white whitespace-nowrap">${nomeMes} <span class="text-slate-500 font-normal text-xs">/ ${ano}</span></td>
+          <td class="p-3"><div class="relative min-w-[120px]"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">R$</span><input type="number" min="0" step="0.01" aria-label="Salário de referência de ${nomeMes}/${ano}" value="${salario}" class="field money-field !pl-7 salario-ref"></div></td>
+          <td class="p-3 font-black text-emerald-300 whitespace-nowrap campo-carne">${fmtBRL.format(carne)}</td>
+          <td class="p-3"><input type="number" min="0" step="0.01" aria-label="Valor pago de ${nomeMes}/${ano}" value="${pago}" class="field money-field pago-atual"></td>
+          <td class="p-3"><input type="number" min="0" step="0.01" aria-label="Valor a pagar de ${nomeMes}/${ano}" value="${aPagar}" class="field money-field a-pagar" data-auto="${reg.autoPagar !== false ? '1' : '0'}"></td>
+          <td class="p-3 pr-4 text-center"><button type="button" class="status-btn whitespace-nowrap px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wide ${badge}" aria-label="Alternar status de ${nomeMes}/${ano}">${status === 'PARCIAL' ? 'PARCIAL' : status}</button></td>
+        </tr>`;
+      }
+      tableFuturoBody.innerHTML = html;
+      document.getElementById('quantidadeParcelas').textContent = ids.length;
+    }
+
+    function recalcularResumo() {
+      let totalHistoricoPago = 0;
+      let diasTempo = 0;
+      for (const item of Object.values(historico)) {
+        totalHistoricoPago += Math.max(0, Number(item.pago) || 0);
+        diasTempo += Math.max(0, Number(item.meses) || 0) * 30 + Math.max(0, Number(item.dias) || 0);
+      }
+      let parcelasPagas = 0, valoresPendentes = 0;
+      for (const reg of Object.values(futuros)) {
+        const pago = Math.max(0, Number(reg.pago) || 0);
+        const aPagar = Math.max(0, Number(reg.aPagar) || 0);
+        totalHistoricoPago += pago;
+        valoresPendentes += aPagar;
+        if (aPagar <= 0 && pago > 0) parcelasPagas++;
+      }
+      diasTempo += parcelasPagas * 30;
+      const anos = Math.floor(diasTempo / 360);
+      const meses = Math.floor((diasTempo % 360) / 30);
+      const dias = diasTempo % 30;
+      const geral = totalHistoricoPago + valoresPendentes;
+      document.getElementById('tempoPago').textContent = `${anos} ${anos === 1 ? 'ano' : 'anos'}, ${meses} ${meses === 1 ? 'mês' : 'meses'}`;
+      document.getElementById('tempoDias').textContent = `${dias} ${dias === 1 ? 'dia adicional' : 'dias adicionais'} • cada mês informado equivale a 30 dias para esta estimativa`;
+      document.getElementById('txtSomaTotalHistorico').textContent = fmtBRL.format(totalHistoricoPago);
+      document.getElementById('txtValoresPagar').textContent = fmtBRL.format(valoresPendentes);
+      document.getElementById('txtSomaGeral').textContent = fmtBRL.format(geral);
+    }
+
+    function salvarLinhaHistorico(linha) {
+      const idAnterior = linha.dataset.histId;
+      const ano = Math.round(Number(linha.querySelector('.hist-ano').value) || 0);
+      const meses = Math.min(12, Math.max(0, Number(linha.querySelector('.hist-meses').value) || 0));
+      const dias = Math.min(30, Math.max(0, Number(linha.querySelector('.hist-dias').value) || 0));
+      const pago = Math.max(0, Number(linha.querySelector('.hist-pago').value) || 0);
+      if (ano < 1900 || ano > 2200) return;
+      if (idAnterior !== String(ano) && historico[String(ano)]) {
+        linha.querySelector('.hist-ano').value = idAnterior;
+        return;
+      }
+      delete historico[idAnterior];
+      historico[String(ano)] = { ano, meses, dias, pago };
+      linha.dataset.histId = String(ano);
+      salvarHistorico();
+      recalcularResumo();
+    }
+
+    containerHistorico.addEventListener('input', (event) => {
+      const linha = event.target.closest('[data-hist-id]');
+      if (linha) salvarLinhaHistorico(linha);
+    });
+
+    tableFuturoBody.addEventListener('input', (event) => {
+      const linha = event.target.closest('tr[data-id]');
+      if (!linha) return;
+      const reg = futuros[linha.dataset.id];
+      if (event.target.classList.contains('salario-ref')) {
+        const carneAnterior = (Number(reg.salarioBase) || 0) * 0.11;
+        reg.salarioBase = Math.max(0, Number(event.target.value) || 0);
+        const novoCarne = reg.salarioBase * 0.11;
+        linha.querySelector('.campo-carne').textContent = fmtBRL.format(novoCarne);
+        const campoPagar = linha.querySelector('.a-pagar');
+        if (campoPagar.dataset.auto === '1' && Math.abs((Number(reg.aPagar) || 0) - carneAnterior) < 0.011) {
+          reg.aPagar = novoCarne;
+          campoPagar.value = novoCarne.toFixed(2);
+        }
+      } else if (event.target.classList.contains('pago-atual')) {
+        reg.pago = Math.max(0, Number(event.target.value) || 0);
+      } else if (event.target.classList.contains('a-pagar')) {
+        reg.aPagar = Math.max(0, Number(event.target.value) || 0);
+        event.target.dataset.auto = '0';
+        reg.autoPagar = false;
+      }
+      reg.status = statusAtual(reg);
+      salvarFuturos();
+      atualizarStatusLinha(linha, reg.status);
+      recalcularResumo();
+    });
+
+    function atualizarStatusLinha(linha, status) {
+      const botao = linha.querySelector('.status-btn');
+      botao.textContent = status;
+      botao.className = 'status-btn whitespace-nowrap px-2 py-1 rounded-md border text-[10px] font-bold uppercase tracking-wide ' +
+        (status === 'PAGO' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : status === 'PARCIAL' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30');
+    }
+
+    tableFuturoBody.addEventListener('click', (event) => {
+      const botao = event.target.closest('.status-btn');
+      if (!botao) return;
+      const linha = botao.closest('tr');
+      const reg = futuros[linha.dataset.id];
+      if ((Number(reg.aPagar) || 0) > 0) {
+        reg.pago = (Number(reg.pago) || 0) + (Number(reg.aPagar) || 0);
+        reg.aPagar = 0;
+        reg.autoPagar = false;
+      } else {
+        reg.aPagar = Math.max(0, (Number(reg.salarioBase) || 0) * 0.11);
+        reg.pago = 0;
+        reg.autoPagar = true;
+      }
+      reg.status = statusAtual(reg);
+      salvarFuturos();
+      renderizarFuturos();
+      recalcularResumo();
+    });
+
+    document.getElementById('btnAdicionarAno').addEventListener('click', () => {
+      let ano = new Date().getFullYear();
+      const existentes = Object.values(historico).map(item => Number(item.ano));
+      while (existentes.includes(ano)) ano--;
+      const id = String(ano);
+      historico[id] = { ano, meses: 0, dias: 0, pago: 0 };
+      salvarHistorico();
+      renderizarHistorico();
+      recalcularResumo();
+      const novaLinha = containerHistorico.querySelector(`[data-hist-id="${id}"]`);
+      if (novaLinha) novaLinha.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    function num(valor) { const n = Number(valor); return Number.isFinite(n) ? n : 0; }
+    function escapar(texto) { return String(texto).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    criarHistoricoInicial();
+    renderizarHistorico();
+    montarFuturos();
+    renderizarFuturos();
+    recalcularResumo();
+  </script>
+</body>
+</html>
